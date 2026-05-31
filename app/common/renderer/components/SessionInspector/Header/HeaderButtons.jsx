@@ -203,7 +203,7 @@ const HeaderButtons = (props) => {
         <Button
           id="btnReload"
           icon={<IconRefresh size={18} />}
-          onClick={() => applyClientMethod({methodName: 'getPageSource'})}
+          onClick={() => applyClientMethod({methodName: 'getPageSource', forceRefresh: true})}
         />
       </Tooltip>
       <Tooltip title={t('Search for element')}>

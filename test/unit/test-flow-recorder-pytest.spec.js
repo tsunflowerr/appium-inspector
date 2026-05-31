@@ -57,13 +57,17 @@ describe('test-flow-recorder/pytest.js', function () {
       stepDelayMs: 500,
     });
 
-    expect(code).toContain('import time');
-    expect(code).toContain('if driver.find_elements(AppiumBy.ACCESSIBILITY_ID, "modal"):');
-    expect(code).toContain('time.sleep(0.5)');
-    expect(code).toContain('driver.find_element(AppiumBy.ACCESSIBILITY_ID, "continue").click()');
+    expect(code).toContain('if is_present(driver, (AppiumBy.ACCESSIBILITY_ID, "modal"), 0.5):');
+    expect(code).toContain(
+      'element = WebDriverWait(driver, 0.5).until(EC.visibility_of_element_located((AppiumBy.ACCESSIBILITY_ID, "confirm")))',
+    );
+    expect(code).toContain(
+      'element = WebDriverWait(driver, 0.5).until(EC.visibility_of_element_located((AppiumBy.ACCESSIBILITY_ID, "continue")))',
+    );
+    expect(code).toContain('element.click()');
   });
 
-  it('should omit time import and sleeps when delay is disabled', function () {
+  it('should omit wait imports when timeout is disabled', function () {
     const code = getPytestTestFlowCode({
       steps: [
         {
@@ -75,7 +79,10 @@ describe('test-flow-recorder/pytest.js', function () {
       stepDelayMs: 0,
     });
 
-    expect(code).not.toContain('import time');
-    expect(code).not.toContain('time.sleep(');
+    expect(code).not.toContain('WebDriverWait');
+    expect(code).not.toContain('expected_conditions as EC');
+    expect(code).not.toContain('TimeoutException');
+    expect(code).toContain('element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "only-step")');
+    expect(code).toContain('element.click()');
   });
 });

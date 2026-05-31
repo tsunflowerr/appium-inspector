@@ -1,5 +1,6 @@
 import _ from 'lodash';
 
+import {DEFAULT_TEST_FLOW_STEP_DELAY_MS} from '../lib/test-flow-recorder/common.js';
 import {
   ADD_ASSIGNED_VAR_CACHE,
   APPEND_TEST_FLOW_ACTION_STEP,
@@ -14,7 +15,6 @@ import {
   CLEAR_SEARCHED_FOR_ELEMENT_BOUNDS,
   CLEAR_TAP_COORDINATES,
   CLEAR_TEST_FLOW,
-  CLEAR_TEST_FLOW_HEALING_SUGGESTION,
   CLEAR_TEST_FLOW_PYTEST_OUTPUT,
   CREATE_NEW_TEST_FLOW,
   DELETE_SAVED_GESTURES_DONE,
@@ -122,6 +122,54 @@ import {
   TEST_FLOW_EXPORT_FORMATS,
 } from '../constants/session-inspector.js';
 import {DEFAULT_TEST_FLOW_STEP_DELAY_MS} from '../lib/test-flow-recorder/common.js';
+
+const TEST_FLOW_DRAFT_KEY = 'draft';
+
+function appendTestFlowRun(historyByFlowKey, run) {
+  const flowKey = run.flowKey || TEST_FLOW_DRAFT_KEY;
+  const currentRuns = historyByFlowKey[flowKey] || [];
+  return {
+    ...historyByFlowKey,
+    [flowKey]: [run, ...currentRuns.filter(({id}) => id !== run.id)],
+  };
+}
+
+function updateTestFlowRun(historyByFlowKey, runId, updater) {
+  if (!runId) {
+    return historyByFlowKey;
+  }
+
+  let hasUpdated = false;
+  const nextHistory = Object.fromEntries(
+    Object.entries(historyByFlowKey).map(([flowKey, runs]) => [
+      flowKey,
+      runs.map((run) => {
+        if (run.id !== runId) {
+          return run;
+        }
+
+        hasUpdated = true;
+        return updater(run);
+      }),
+    ]),
+  );
+
+  return hasUpdated ? nextHistory : historyByFlowKey;
+}
+
+function clearTestFlowRunHistory(historyByFlowKey, flowKey) {
+  if (!flowKey) {
+    return {};
+  }
+
+  if (!historyByFlowKey[flowKey]) {
+    return historyByFlowKey;
+  }
+
+  const nextHistory = {...historyByFlowKey};
+  delete nextHistory[flowKey];
+  return nextHistory;
+}
 
 const TEST_FLOW_DRAFT_KEY = 'draft';
 

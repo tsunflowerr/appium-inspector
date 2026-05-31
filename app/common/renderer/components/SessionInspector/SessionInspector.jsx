@@ -206,9 +206,6 @@ const Inspector = (props) => {
     if (imgReady && isAwaitingMjpegStream) {
       setAwaitingMjpegStream(false);
       updateScreenshotScaleDebounced();
-      // stream obtained - can clear the refresh interval
-      clearInterval(mjpegStreamCheckIntervalRef.current);
-      mjpegStreamCheckIntervalRef.current = null;
     } else if (!imgReady && !isAwaitingMjpegStream) {
       setAwaitingMjpegStream(true);
     }

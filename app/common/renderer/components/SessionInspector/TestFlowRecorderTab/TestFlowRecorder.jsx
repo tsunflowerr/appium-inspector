@@ -2,10 +2,12 @@ import {
   IconCode,
   IconCopy,
   IconDeviceFloppy,
+  IconEdit,
   IconEraser,
   IconPlayerPause,
   IconPlayerPlay,
   IconPlus,
+  IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
 import {
@@ -293,6 +295,7 @@ const TestFlowRecorder = (props) => {
   const terminalRef = useRef(null);
   const [showResultSummary, setShowResultSummary] = useState(true);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [flowNameInput, setFlowNameInput] = useState('');
   const [expandedStepId, setExpandedStepId] = useState(null);
   const [selectedLogRunId, setSelectedLogRunId] = useState(null);
@@ -364,6 +367,29 @@ const TestFlowRecorder = (props) => {
       testFlowStepDelayMs,
     );
     setSaveModalOpen(false);
+  };
+
+  const handleRename = () => {
+    if (currentTestFlowId && currentFlow) {
+      setFlowNameInput(currentFlow.name);
+      setRenameModalOpen(true);
+    }
+  };
+
+  const handleRenameConfirm = () => {
+    if (!flowNameInput.trim()) {
+      Modal.error({
+        title: t('Flow name is required'),
+      });
+      return;
+    }
+    saveTestFlow(
+      flowNameInput.trim(),
+      recordedTestFlowSteps,
+      currentTestFlowId,
+      testFlowStepDelayMs,
+    );
+    setRenameModalOpen(false);
   };
 
   const handleSaveAs = () => {
@@ -534,6 +560,32 @@ const TestFlowRecorder = (props) => {
 
   const updateStep = (stepId, updates) => updateTestFlowStep(stepId, updates);
 
+  const addNestedStep = (branchStep, section) => {
+    if (!selectedElementLocator) {
+      return;
+    }
+
+    const newStep = {
+      id: Math.random().toString(36).substring(7),
+      type: 'action',
+      action: 'tap',
+      name: t('Tap element inside branch'),
+      locator: selectedElementLocator,
+    };
+
+    const currentSteps = branchStep[section] || [];
+    updateStep(branchStep.id, {
+      [section]: [...currentSteps, newStep],
+    });
+  };
+
+  const removeNestedStep = (branchStep, section, stepId) => {
+    const currentSteps = branchStep[section] || [];
+    updateStep(branchStep.id, {
+      [section]: currentSteps.filter((s) => s.id !== stepId),
+    });
+  };
+
   const addActionStep = () => {
     appendTestFlowActionStep({
       name: t('Tap selected element'),
@@ -565,6 +617,7 @@ const TestFlowRecorder = (props) => {
       methodName: 'elementClick',
       elementId: selectedElementId,
       skipRecord: isTestFlowRecording,
+      forceRefresh: true,
     });
   };
 
@@ -583,6 +636,7 @@ const TestFlowRecorder = (props) => {
       elementId: selectedElementId,
       args: [inputText || ''],
       skipRecord: isTestFlowRecording,
+      forceRefresh: true,
     });
     setInputText('');
   };
@@ -763,14 +817,48 @@ const TestFlowRecorder = (props) => {
               />
             </div>
           </div>
-          <div className={styles.branchSummary}>
-            <Tag size="small">
-              {t('Then steps')}: {step.thenSteps?.length || 0}
-            </Tag>
-            <Tag size="small">
-              {t('Else steps')}: {step.elseSteps?.length || 0}
-            </Tag>
-          </div>
+
+          {[
+            {key: 'thenSteps', label: t('THEN (If condition matches)')},
+            {key: 'elseSteps', label: t('ELSE (If condition doesn\'t match)')},
+          ].map((section) => (
+            <div key={section.key} className={styles.nestedStepsContainer}>
+              <div className={styles.nestedStepsTitle}>{section.label}</div>
+              <div className={styles.nestedStepList}>
+                {!(step[section.key] || []).length ? (
+                  <div className={styles.noNestedSteps}>{t('No steps in this branch')}</div>
+                ) : (
+                  (step[section.key] || []).map((nestedStep) => (
+                    <div key={nestedStep.id} className={styles.nestedStepItem}>
+                      <Tag className={styles.nestedStepType} color="blue">
+                        {nestedStep.action || nestedStep.type}
+                      </Tag>
+                      <span className={styles.nestedStepName}>{nestedStep.name}</span>
+                      <div className={styles.nestedStepActions}>
+                        <Button
+                          size="small"
+                          type="text"
+                          danger
+                          icon={<IconTrash size={10} />}
+                          onClick={() => removeNestedStep(step, section.key, nestedStep.id)}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className={styles.branchControls}>
+                <Button
+                  size="small"
+                  onClick={() => addNestedStep(step, section.key)}
+                  disabled={!selectedElementLocator}
+                  className={styles.actionBtn}
+                >
+                  {t('+ Add Current')}
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       );
     }
@@ -780,6 +868,12 @@ const TestFlowRecorder = (props) => {
 
   const actionBar = (
     <Space size="middle" wrap>
+      <Tooltip title={t('Refresh')}>
+        <Button
+          icon={<IconRefresh size={18} />}
+          onClick={() => applyClientMethod({methodName: 'getPageSource', forceRefresh: true})}
+        />
+      </Tooltip>
       <Tooltip
         title={t(isTestFlowRecording ? 'Pause Test Flow Recording' : 'Start Test Flow Recording')}
       >
@@ -853,6 +947,14 @@ const TestFlowRecorder = (props) => {
                 ]}
               />
               <div className={styles.flowButtons}>
+                <Tooltip title={t('Rename Flow')}>
+                  <Button
+                    size="small"
+                    icon={<IconEdit size={14} />}
+                    onClick={handleRename}
+                    disabled={!currentTestFlowId}
+                  />
+                </Tooltip>
                 <Tooltip title={t('Save Flow')}>
                   <Button
                     size="small"
@@ -1474,6 +1576,25 @@ const TestFlowRecorder = (props) => {
         >
           <div style={{marginTop: 16}}>
             <div style={{marginBottom: 8}}>{t('Enter flow name')}:</div>
+            <Input
+              value={flowNameInput}
+              onChange={(e) => setFlowNameInput(e.target.value)}
+              placeholder={t('Enter flow name')}
+              autoFocus
+            />
+          </div>
+        </Modal>
+        <Modal
+          title={t('Rename Flow')}
+          open={renameModalOpen}
+          onOk={handleRenameConfirm}
+          onCancel={() => setRenameModalOpen(false)}
+          okText={t('Rename')}
+          cancelText={t('Cancel')}
+          destroyOnClose
+        >
+          <div style={{marginTop: 16}}>
+            <div style={{marginBottom: 8}}>{t('Enter new flow name')}:</div>
             <Input
               value={flowNameInput}
               onChange={(e) => setFlowNameInput(e.target.value)}

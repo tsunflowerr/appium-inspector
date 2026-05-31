@@ -406,6 +406,73 @@
   margin-top: 4px;
 }
 
+.nestedStepsContainer {
+  margin-top: 12px;
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.nestedStepsTitle {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.nestedStepList {
+  display: flex;
+  flex-direction: column;
+}
+
+.nestedStepItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.nestedStepName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nestedStepType {
+  font-size: 8px !important;
+  line-height: normal !important;
+  height: auto !important;
+  padding: 0 4px !important;
+  margin-inline-end: 0 !important;
+}
+
+.nestedStepActions {
+  display: flex;
+  gap: 2px;
+}
+
+.noNestedSteps {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.branchControls {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 /* Runner Panel UI */
 .runnerHeader {
   display: flex;
